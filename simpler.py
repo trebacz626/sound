@@ -18,6 +18,9 @@ print(framerate)
 times = np.array([i/framerate for i in range(nframes)])
 frame_size = 16
 
+calculated_colume = volume(sound, frame_size)
+calculated_zcr = zcr(sound, frame_size)
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -89,13 +92,13 @@ class MainWindow(QMainWindow):
     def draw_plot_volume(self, x_min=0, x_max=sys.maxsize):
         self.ax2.clear()
         self.ax2.plot(times[(frame_size - 1) // 2:-frame_size // 2][x_min:x_max],
-                      volume(sound, frame_size)[x_min:x_max])
+                      calculated_colume[x_min:x_max])
         self.ax2.set_title('Volume')
         self.canvas2.draw()
 
     def draw_plot_zcr(self, x_min=0, x_max=sys.maxsize):
         self.ax3.clear()
-        self.ax3.plot(times[(frame_size - 1) // 2:-frame_size // 2][x_min:x_max], zcr(sound, frame_size)[x_min:x_max])
+        self.ax3.plot(times[(frame_size - 1) // 2:-frame_size // 2][x_min:x_max], calculated_zcr[x_min:x_max])
         self.ax3.set_title('Zero Crossing Rate')
         self.canvas3.draw()
 
