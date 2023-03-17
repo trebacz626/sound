@@ -10,7 +10,7 @@ from scipy.io import wavfile
 app = Dash(__name__)
 
 # read WAV file
-framerate, sound = wavfile.read('./song.wav')
+framerate, sound = wavfile.read('./sounds/song.wav')
 sound = sound[:, 1].astype(np.float64)
 nframes = len(sound)
 duration = nframes / framerate
