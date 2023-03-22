@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle
 from matplotlib.widgets import SpanSelector
 from scipy.io import wavfile
 from sound_params import *
@@ -16,11 +17,14 @@ nframes = len(sound)
 duration = nframes / framerate
 print(framerate)
 times = np.array([i/framerate for i in range(nframes)])
-frame_size = framerate/100
+fram_size_ms = 10
+frame_size = framerate/(1000/fram_size_ms)
 
 calculated_volume = efficient_volume(sound, frame_size)
 calculated_zcr = efficient_zcr(sound, frame_size)
 times_window = efficient_sample_time(times, frame_size)
+silence = times_window[(calculated_zcr > 0.1) & (calculated_volume < 600)]
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -85,7 +89,10 @@ class MainWindow(QMainWindow):
 
     def draw_plot_sound(self, x_min=0, x_max=sys.maxsize):
         self.ax1.clear()
-        self.ax1.plot(times[x_min:x_max], sound[x_min:x_max])
+        selected_times = times[x_min:x_max]
+        for s in silence[(silence >= selected_times[0]) & (silence <= selected_times[-1])]:
+            self.ax1.add_patch(Rectangle((s-fram_size_ms/1000, -10000), fram_size_ms/1000, 20000, facecolor="red"))
+        self.ax1.plot(selected_times, sound[x_min:x_max])
         self.ax1.set_title('Sound Wave')
         self.canvas1.draw()
 
