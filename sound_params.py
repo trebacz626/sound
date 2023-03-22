@@ -32,9 +32,9 @@ def efficient_ste(sound, window_size=DEFAULT_WINDOW_SIZE):
     l = len(sound)
     distance = window_size//2
     ste = []
-    sound_squared = sound*sound
+    sound_squared = np.power(sound, 2)
     for i in range(window_size, l, distance):
-        ste.append(sound_squared[i-window_size:i].sum())
+        ste.append(sound_squared[i-window_size:i].mean())
     return np.array(ste)
 
 @jit(nopython=True)
@@ -52,6 +52,17 @@ def efficient_zcr(sound, window_size=DEFAULT_WINDOW_SIZE):
         zcr.append(np.sum(np.abs(c_sound[1:] - c_sound[:-1])))
     return np.array(zcr)/2/window_size
 
+
+@jit(nopython=True)
+def efficient_fundamental_frequency(sound, l=10, window_size=DEFAULT_WINDOW_SIZE):
+    N = len(sound)
+    distance = window_size // 2
+    rn = []
+    for i in range(window_size, N-l, distance):
+        rn.append((sound[i-window_size:i]*sound[i-window_size+l:i+l]).sum())
+    return np.array(rn)
+
+
 @jit(nopython=True)
 def efficient_sample_time(times, window_size=DEFAULT_WINDOW_SIZE):
     l = len(times)
@@ -67,3 +78,5 @@ def vdr(sound, window_size=DEFAULT_WINDOW_SIZE):
     vol = efficient_volume(sound, window_size)
 
     return (vol.max()-vol.min())/vol.min()
+
+
