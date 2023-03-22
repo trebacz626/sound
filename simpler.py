@@ -10,17 +10,17 @@ from scipy.io import wavfile
 from sound_params import *
 
 
-framerate, sound = wavfile.read('./sounds/song.wav')
-sound = sound[:, 1].astype(np.float64)
+framerate, sound = wavfile.read('./sounds/me.wav')
+# sound = sound[:, 1].astype(np.float64)
 nframes = len(sound)
 duration = nframes / framerate
 print(framerate)
 times = np.array([i/framerate for i in range(nframes)])
-frame_size = 16
+frame_size = framerate/100
 
-calculated_colume = volume(sound, frame_size)
-calculated_zcr = zcr(sound, frame_size)
-
+calculated_volume = efficient_volume(sound, frame_size)
+calculated_zcr = efficient_zcr(sound, frame_size)
+times_window = efficient_sample_time(times, frame_size)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -79,8 +79,8 @@ class MainWindow(QMainWindow):
         x_max = np.searchsorted(times, xmax, side="right")
 
         self.draw_plot_sound(x_min, x_max)
-        self.draw_plot_volume(x_min, x_max)
-        self.draw_plot_zcr(x_min, x_max)
+        self.draw_plot_volume(xmin, xmax)
+        self.draw_plot_zcr(xmin, xmax)
 
 
     def draw_plot_sound(self, x_min=0, x_max=sys.maxsize):
@@ -89,16 +89,23 @@ class MainWindow(QMainWindow):
         self.ax1.set_title('Sound Wave')
         self.canvas1.draw()
 
-    def draw_plot_volume(self, x_min=0, x_max=sys.maxsize):
+    def draw_plot_volume(self, xmin=0, xmax=sys.maxsize):
         self.ax2.clear()
-        self.ax2.plot(times[(frame_size - 1) // 2:-frame_size // 2][x_min:x_max],
-                      calculated_colume[x_min:x_max])
+
+        x_min = np.searchsorted(times_window, xmin, side="left")
+        x_max = np.searchsorted(times_window, xmax, side="right")
+
+        self.ax2.plot(times_window[x_min:x_max], calculated_volume[x_min:x_max])
         self.ax2.set_title('Volume')
         self.canvas2.draw()
 
-    def draw_plot_zcr(self, x_min=0, x_max=sys.maxsize):
+    def draw_plot_zcr(self, xmin=0, xmax=sys.maxsize):
         self.ax3.clear()
-        self.ax3.plot(times[(frame_size - 1) // 2:-frame_size // 2][x_min:x_max], calculated_zcr[x_min:x_max])
+
+        x_min = np.searchsorted(times_window, xmin, side="left")
+        x_max = np.searchsorted(times_window, xmax, side="right")
+
+        self.ax3.plot(times_window[x_min:x_max], calculated_zcr[x_min:x_max])
         self.ax3.set_title('Zero Crossing Rate')
         self.canvas3.draw()
 
