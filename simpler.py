@@ -9,6 +9,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.widgets import SpanSelector
 from scipy.io import wavfile
 from sound_params import *
+from scipy.signal import find_peaks
 
 
 framerate, sound = wavfile.read('./sounds/me.wav')

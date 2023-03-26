@@ -1,6 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
-from scipy.signal import convolve
+from scipy.signal import convolve, find_peaks
 from numba import jit
 
 
@@ -20,8 +21,6 @@ def zcr(sound, window_size=DEFAULT_WINDOW_SIZE):
     slided = sliding_window_view(sound, window_size-1)
     return 1/window_size*0.5*np.sum(np.abs(np.sign(slided[1:]) - np.sign(slided[:-1])), axis=1)
 
-def rn(sound, l, window_size=DEFAULT_WINDOW_SIZE):
-    pass
 
 
 
@@ -54,13 +53,46 @@ def efficient_zcr(sound, window_size=DEFAULT_WINDOW_SIZE):
 
 
 @jit(nopython=True)
-def efficient_fundamental_frequency(sound, l=10, window_size=DEFAULT_WINDOW_SIZE):
+def efficient_rn(sound, l=10):
     N = len(sound)
-    distance = window_size // 2
-    rn = []
-    for i in range(window_size, N-l, distance):
-        rn.append((sound[i-window_size:i]*sound[i-window_size+l:i+l]).sum())
-    return np.array(rn)
+    total = 0
+    for i in range(N-l):
+        total += (sound[i]*sound[i+l])
+    return total/(len(sound)-l)
+
+@jit(nopython=True, parallel = True)
+def efficient_amdf(sound, l=10):
+    N = len(sound)
+    total = 0
+    for i in range(N-l):
+        total += abs(sound[i]-sound[i+l])
+    return total/(len(sound)-l)
+
+@jit(nopython=True, parallel = True)
+def efficient_fundamental_frequency(sound, frame_rate,window_size=DEFAULT_WINDOW_SIZE):
+    L = len(sound)
+    distance = window_size // 1
+    freqs = []
+    min_freq=20
+    max_freq=500
+    minperiod=frame_rate//max_freq
+    maxperiod=frame_rate//min_freq
+    for i in range(window_size, L, distance):
+        corrs=[]
+        step = 1
+        for l in range(minperiod,maxperiod,step):
+            corrs.append(efficient_rn(sound[i-window_size:i+l],l))
+        # peaks, _ = find_peaks(corrs)
+        # plt.plot(list(range(len(corrs))), corrs)
+        # plt.show()
+        # print((np.argmax(np.array(corrs))*step+minperiod))
+        # print()
+        # f0 = frame_rate / (peaks[0] * step + beg)
+        f0 = frame_rate/(np.argmax(np.array(corrs))*step+minperiod)
+        freqs.append(f0)
+    return np.array(freqs)
+
+
 
 
 @jit(nopython=True)
