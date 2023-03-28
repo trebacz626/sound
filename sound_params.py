@@ -68,6 +68,8 @@ def efficient_zcr(sound, window_size=DEFAULT_WINDOW_SIZE):
 
 @jit(nopython=True)
 def efficient_rn(sound, l=10):
+    if len(sound) <= l:
+        return 0
     N = len(sound)
     total = 0
     for i in range(N-l):
@@ -82,13 +84,13 @@ def efficient_amdf(sound, l=10):
         total += abs(sound[i]-sound[i+l])
     return total/(len(sound)-l)
 
-@jit(nopython=True, parallel = True)
+# @jit(nopython=True, parallel = True)
 def efficient_fundamental_frequency(sound, frame_rate,window_size=DEFAULT_WINDOW_SIZE):
     L = len(sound)
-    distance = window_size // 1
+    distance = window_size // 2
     freqs = []
     min_freq=20
-    max_freq=500
+    max_freq=1000
     minperiod=frame_rate//max_freq
     maxperiod=frame_rate//min_freq
     for i in range(window_size, L, distance):
@@ -96,12 +98,6 @@ def efficient_fundamental_frequency(sound, frame_rate,window_size=DEFAULT_WINDOW
         step = 1
         for l in range(minperiod,maxperiod,step):
             corrs.append(efficient_rn(sound[i-window_size:i+l],l))
-        # peaks, _ = find_peaks(corrs)
-        # plt.plot(list(range(len(corrs))), corrs)
-        # plt.show()
-        # print((np.argmax(np.array(corrs))*step+minperiod))
-        # print()
-        # f0 = frame_rate / (peaks[0] * step + beg)
         f0 = frame_rate/(np.argmax(np.array(corrs))*step+minperiod)
         freqs.append(f0)
     return np.array(freqs)
@@ -122,3 +118,20 @@ def vdr(sound, window_size=DEFAULT_WINDOW_SIZE):
     vol = efficient_volume(sound, window_size)
 
     return (vol.max()-vol.min())/vol.min()
+
+
+def find_silences(zcr, volume, times_window):
+    #chrzaszcz volume 4000
+    silence_selector = ((zcr > 0.07) & (volume < 5000)).astype(int)
+    # silence_selector = [silence_selector[0]] + (
+    #             (silence_selector[0:-2] & silence_selector[2]) | silence_selector[1:-1]).tolist() + [
+    #                        silence_selector[-1]]
+    differences = silence_selector[1:] - silence_selector[:-1]
+    start_idxes = np.where(differences > 0)[0] + 1
+    if silence_selector[0] == 1:
+        start_idxes = np.insert(start_idxes, 0, 0, axis=0)
+    end_idxes = np.where(differences < 0)[0]
+    if silence_selector[-1] == 1:
+        end_idxes = np.append(end_idxes, len(silence_selector) - 1)
+    print(np.array([[times_window[s],times_window[e]] for s,e in zip(start_idxes, end_idxes)]))
+    return np.array([[times_window[s],times_window[e]] for s,e in zip(start_idxes, end_idxes)])
