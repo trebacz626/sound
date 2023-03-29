@@ -1,9 +1,9 @@
+import math
+
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from scipy.signal import convolve
-from numba import jit, cuda
-
-cuda.detect()
+from numba import jit
 
 DEFAULT_WINDOW_SIZE = 10
 
@@ -78,6 +78,7 @@ def efficient_rn(sound, l=10):
         total += (sound[i]*sound[i+l])
     return total/(len(sound)-l)
 
+
 @jit(nopython=True, parallel = True)
 def efficient_amdf(sound, l=10):
     N = len(sound)
@@ -86,25 +87,24 @@ def efficient_amdf(sound, l=10):
         total += abs(sound[i]-sound[i+l])
     return total/(len(sound)-l)
 
-@jit(nopython=True, parallel = True)
+
+@jit(nopython=True, parallel=True)
 def efficient_fundamental_frequency(sound, frame_rate,window_size=DEFAULT_WINDOW_SIZE):
     L = len(sound)
     distance = window_size // 2
     freqs = []
-    min_freq=20
-    max_freq=1000
-    minperiod=frame_rate//max_freq
-    maxperiod=frame_rate//min_freq
+    min_freq = 20
+    max_freq = 1000
+    minperiod = frame_rate//max_freq
+    maxperiod = frame_rate//min_freq
     for i in range(window_size, L, distance):
-        corrs=[]
+        corrs = []
         step = 1
-        for l in range(minperiod,maxperiod,step):
-            corrs.append(efficient_rn(sound[i-window_size:i+l],l))
+        for l in range(minperiod, maxperiod, step):
+            corrs.append(efficient_rn(sound[i-window_size:i+l], l))
         f0 = frame_rate/(np.argmax(np.array(corrs))*step+minperiod)
         freqs.append(f0)
     return np.array(freqs)
-
-
 
 
 @jit(nopython=True)
@@ -115,10 +115,12 @@ def efficient_sample_time(times, window_size=DEFAULT_WINDOW_SIZE):
 
 
 ###CLIP LEVEL###
-@jit(nopython=True, parallel = True)
+@jit(nopython=True, parallel=True)
 def vdr(sound, window_size=DEFAULT_WINDOW_SIZE):
     vol = efficient_volume(sound, window_size)
 
+    if vol.min() == 0:
+        return math.inf
     return (vol.max()-vol.min())/vol.min()
 
 

@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.loadFile("./sounds/znormalizowane/chrzaszcz_1.wav")
+        self.loadFile("PinkPanther60.wav")
         self.figure1 = Figure(figsize=(5, 4), dpi=100)
         self.canvas1 = FigureCanvas(self.figure1)
         self.ax1 = self.figure1.add_subplot(111)
