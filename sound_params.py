@@ -136,10 +136,12 @@ def find_detections(zcr, volume, times_window):
     #             (silence_selector[0:-2] & silence_selector[2]) | silence_selector[1:-1]).tolist() + [
     #                        silence_selector[-1]]
 
-    return np.concatenate([
+    result =  np.concatenate([
         find_continuous_segments(bezdzw_selector, times_window, 1),
         find_continuous_segments(silence_selector, times_window, 0)
     ], axis=0)
+    result = result[result[:, 0].argsort()]
+    return result
 
 
 # @jit(forceobj=True)

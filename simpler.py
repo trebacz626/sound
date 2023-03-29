@@ -175,7 +175,6 @@ class MainWindow(QMainWindow):
             return
         # for s in self.silence[(self.silence >= selected_times[0]) & (self.silence <= selected_times[-1])]:
         for start, end, type in self.detections:
-
             if end < selected_times[0]:
                 continue
             if start > selected_times[-1]:
