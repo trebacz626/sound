@@ -127,11 +127,7 @@ class MainWindow(QMainWindow):
             self.calculated_zcr = efficient_zcr(self.sound, self.frame_size)
             self.times_window = efficient_sample_time(self.times, self.frame_size)
             self.seconds_window = efficient_sample_time(self.times_window, 1000 // self.frame_size_ms)
-            # silence_selector = (self.calculated_zcr > 0.07) & (self.calculated_volume < 800)
-            # silence_selector = [silence_selector[0]] + ((silence_selector[0:-2] & silence_selector[2]) | silence_selector[1:-1]).tolist() + [silence_selector[-1]]
-            #find start and end indexes of continous sections of 1s in silcene_selctor
             self.detections = find_detections(self.calculated_zcr, self.calculated_volume, self.times_window)
-            # self.silence = self.times_window[silence_selector]
 
             self.fundamental_frequency_window = 40
             self.fundamental_freq_frame_size = self.framerate * self.fundamental_frequency_window // 1000
@@ -173,7 +169,6 @@ class MainWindow(QMainWindow):
         selected_sounds = self.sound[x_min:x_max]
         if len(selected_times) == 0:
             return
-        # for s in self.silence[(self.silence >= selected_times[0]) & (self.silence <= selected_times[-1])]:
         for start, end, type in self.detections:
             if end < selected_times[0]:
                 continue
