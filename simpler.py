@@ -17,8 +17,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.loadFile("./sounds/znormalizowane/chrzaszcz_1.wav")
-
+        self.loadFile("PinkPanther60.wav")
         hboxCanvas1 = self.create_sound_box()
 
         self.figure2 = Figure(figsize=(5, 4), dpi=100)
