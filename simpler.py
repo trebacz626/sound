@@ -18,9 +18,8 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.loadFile("./sounds/znormalizowane/chrzaszcz_1.wav")
-        self.figure1 = Figure(figsize=(5, 4), dpi=100)
-        self.canvas1 = FigureCanvas(self.figure1)
-        self.ax1 = self.figure1.add_subplot(111)
+
+        hboxCanvas1 = self.create_sound_box()
 
         self.figure2 = Figure(figsize=(5, 4), dpi=100)
         self.canvas2 = FigureCanvas(self.figure2)
@@ -35,7 +34,8 @@ class MainWindow(QMainWindow):
         hbox = QHBoxLayout()
         hboxbutton = QHBoxLayout()
 
-        vbox1.addWidget(self.canvas1)
+
+        vbox1.addLayout(hboxCanvas1)
         vbox1.addWidget(self.canvas2)
         vbox1.addWidget(self.canvas3)
 
@@ -78,9 +78,31 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         self.onselect(0, len(self.sound))
 
-    """
-        Opens a select wav file button and sets the sound to the selected file
-    """
+    def create_sound_box(self):
+        self.figure1 = Figure(figsize=(5, 4), dpi=100)
+        self.canvas1 = FigureCanvas(self.figure1)
+        self.ax1 = self.figure1.add_subplot(111)
+
+        hboxCanvas1 = QHBoxLayout()
+        buttonLeft = QPushButton('<')
+        buttonLeft.clicked.connect(self.move_left)
+        hboxCanvas1.addWidget(buttonLeft)
+        hboxCanvas1.addWidget(self.canvas1)
+        buttonRight = QPushButton('>')
+        buttonRight.clicked.connect(self.move_right)
+        hboxCanvas1.addWidget(buttonRight)
+
+        buttonLeft.setFixedWidth(25)
+        buttonRight.setFixedWidth(25)
+
+
+        for i in range(hboxCanvas1.count()):
+            hboxCanvas1.itemAt(i).widget().setFixedHeight(400)
+        return hboxCanvas1
+
+
+
+
     def selectFile(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -126,7 +148,8 @@ class MainWindow(QMainWindow):
         sd.stop()
 
     def onselect(self, xmin, xmax):
-
+        self.xmin = xmin
+        self.xmax = xmax
         self.x_min = np.searchsorted(self.times, xmin, side="left")
         self.x_max = np.searchsorted(self.times, xmax, side="right")
 
@@ -136,11 +159,21 @@ class MainWindow(QMainWindow):
         self.draw_plot_fundamental_frequency(xmin, xmax)
         self.draw_plot_lster(xmin, xmax)
 
+    def move_left(self):
+        diff = self.xmax - self.xmin
+        self.onselect(self.xmin - diff/10, self.xmax - diff/10)
+
+    def move_right(self):
+        diff = self.xmax - self.xmin
+        self.onselect(self.xmin + diff/10, self.xmax + diff/10)
+
 
     def draw_plot_sound(self, x_min=0, x_max=sys.maxsize):
         self.ax1.clear()
         selected_times = self.times[x_min:x_max]
         selected_sounds = self.sound[x_min:x_max]
+        if len(selected_times) == 0:
+            return
         # for s in self.silence[(self.silence >= selected_times[0]) & (self.silence <= selected_times[-1])]:
         for start, end, type in self.detections:
 
@@ -148,10 +181,8 @@ class MainWindow(QMainWindow):
                 continue
             if start > selected_times[-1]:
                 break
-            # print("B",start, end)
             start = max(start, selected_times[0])
             end = min(end, selected_times[-1])
-            # print("A",start,end)
             self.ax1.add_patch(Rectangle((start - self.frame_size_ms / 2000, -30000), end-start+(self.frame_size_ms)/1000, 60000, facecolor="red" if type == 0 else "yellow"))
         self.ax1.plot(selected_times, selected_sounds)
         self.ax1.set_title('Sound Wave')
@@ -205,7 +236,7 @@ class MainWindow(QMainWindow):
         self.canvas5.draw()
 
     def reset_plots(self):
-        self.onselect(0, len(self.sound))
+        self.onselect(0, self.times[-1])
         sd.stop()
 
 
