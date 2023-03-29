@@ -19,7 +19,7 @@ times = np.array([i/framerate for i in range(nframes)])
 #
 # def plot_wave(times, sound, title, xaxis,  frame_size = 8):
 #     return go.Scatter(x=times, y=sound)
-print(len(sound), len(times))
+# print(len(sound), len(times))
 frame_size = 8
 app.layout = html.Div(children=[
     html.H1(children='Hello Dash'),

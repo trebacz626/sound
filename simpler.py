@@ -94,7 +94,8 @@ class MainWindow(QMainWindow):
     def loadFile(self, fileName):
             print("Loading file: " + fileName)
             self.framerate, self.sound = wavfile.read(fileName)
-            # self.sound /= self.sound.abs().max()
+            if self.sound.ndim > 1:
+                self.sound = self.sound[:, 0]
             self.n_frames = len(self.sound)
             self.duration = self.n_frames / self.framerate
             self.times = np.array([i / self.framerate for i in range(self.n_frames)])
@@ -108,7 +109,7 @@ class MainWindow(QMainWindow):
             # silence_selector = (self.calculated_zcr > 0.07) & (self.calculated_volume < 800)
             # silence_selector = [silence_selector[0]] + ((silence_selector[0:-2] & silence_selector[2]) | silence_selector[1:-1]).tolist() + [silence_selector[-1]]
             #find start and end indexes of continous sections of 1s in silcene_selctor
-            self.silence = find_silences(self.calculated_zcr, self.calculated_volume, self.times_window)
+            self.detections = find_detections(self.calculated_zcr, self.calculated_volume, self.times_window)
             # self.silence = self.times_window[silence_selector]
 
             self.fundamental_frequency_window = 40
@@ -141,17 +142,17 @@ class MainWindow(QMainWindow):
         selected_times = self.times[x_min:x_max]
         selected_sounds = self.sound[x_min:x_max]
         # for s in self.silence[(self.silence >= selected_times[0]) & (self.silence <= selected_times[-1])]:
-        for start, end in self.silence:
+        for start, end, type in self.detections:
 
             if end < selected_times[0]:
                 continue
             if start > selected_times[-1]:
                 break
-            print("B",start, end)
+            # print("B",start, end)
             start = max(start, selected_times[0])
             end = min(end, selected_times[-1])
-            print("A",start,end)
-            self.ax1.add_patch(Rectangle((start - self.frame_size_ms / 2000, -10000), end-start+(self.frame_size_ms)/1000, 20000, facecolor="red" if start - end > 0.5 else "yellow"))
+            # print("A",start,end)
+            self.ax1.add_patch(Rectangle((start - self.frame_size_ms / 2000, -30000), end-start+(self.frame_size_ms)/1000, 60000, facecolor="red" if type == 0 else "yellow"))
         self.ax1.plot(selected_times, selected_sounds)
         self.ax1.set_title('Sound Wave')
         self.ax1.set_ylim((selected_sounds.min()*0.9, selected_sounds.max()*1.1))
