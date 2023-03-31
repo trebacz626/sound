@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.loadFile("PinkPanther60.wav")
+        self.loadFile("zdanie_1.wav")
         hboxCanvas1 = self.create_sound_box()
 
         self.figure2 = Figure(figsize=(5, 4), dpi=100)
@@ -100,8 +100,6 @@ class MainWindow(QMainWindow):
         return hboxCanvas1
 
 
-
-
     def selectFile(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -181,8 +179,6 @@ class MainWindow(QMainWindow):
         self.ax1.set_title('Sound Wave')
         self.ax1.set_ylim((selected_sounds.min()*0.9, selected_sounds.max()*1.1))
         self.canvas1.draw()
-
-
 
     def draw_plot_volume(self, xmin=0, xmax=sys.maxsize):
         self.ax2.clear()

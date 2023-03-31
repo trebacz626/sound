@@ -1,29 +1,9 @@
 import math
 
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
-from scipy.signal import convolve
 from numba import jit
 
 DEFAULT_WINDOW_SIZE = 10
-
-
-def ste(sound, window_size=DEFAULT_WINDOW_SIZE):
-    return (convolve(sound * sound, np.ones(window_size)) / window_size)[(window_size-1):-(window_size-1)]
-
-
-def volume(sound, window_size=DEFAULT_WINDOW_SIZE):
-    return np.sqrt(ste(sound, window_size))
-
-
-def zcr(sound, window_size=DEFAULT_WINDOW_SIZE):
-    slided = sliding_window_view(sound, window_size-1)
-    return 1/window_size*0.5*np.sum(np.abs(np.sign(slided[1:]) - np.sign(slided[:-1])), axis=1)
-
-
-def rn(sound, l, window_size=DEFAULT_WINDOW_SIZE):
-    pass
-
 
 @jit(nopython=True, parallel=True)
 def lster(sound, window_size=DEFAULT_WINDOW_SIZE, big_window_size=DEFAULT_WINDOW_SIZE*25):
@@ -38,8 +18,6 @@ def lster(sound, window_size=DEFAULT_WINDOW_SIZE, big_window_size=DEFAULT_WINDOW
 
     return np.array(lster)
 
-
-# efficient
 
 @jit(nopython=True, parallel=True)
 def efficient_ste(sound, window_size=DEFAULT_WINDOW_SIZE):
@@ -126,7 +104,6 @@ def vdr(sound, window_size=DEFAULT_WINDOW_SIZE):
 
 @jit(forceobj=True)
 def find_detections(zcr, volume, times_window):
-    #chrzaszcz volume 4000
     bezdzw_selector = ((zcr > 0.07) & (volume < 6000)).astype(int)
     silence_selector = ((zcr > 0.07) & (volume < 300)).astype(int)
     bezdzw_selector = bezdzw_selector - silence_selector
@@ -140,7 +117,7 @@ def find_detections(zcr, volume, times_window):
     return result
 
 
-# @jit(forceobj=True)
+@jit(forceobj=True)
 def find_continuous_segments(selector, times_window, type=0):
     differences = selector[1:] - selector[:-1]
     start_idxes = np.where(differences > 0)[0] + 1
