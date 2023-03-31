@@ -96,10 +96,7 @@ def efficient_sample_time(times, window_size=DEFAULT_WINDOW_SIZE):
 @jit(nopython=True, parallel=True)
 def vdr(sound, window_size=DEFAULT_WINDOW_SIZE):
     vol = efficient_volume(sound, window_size)
-
-    if vol.min() == 0:
-        return math.inf
-    return (vol.max()-vol.min())/vol.min()
+    return (vol.max()-vol.min())/vol.max()
 
 
 @jit(forceobj=True)
