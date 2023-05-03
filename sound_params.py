@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 from numba import jit
+import librosa
 
 DEFAULT_WINDOW_SIZE = 10
 
@@ -126,3 +127,99 @@ def find_continuous_segments(selector, times_window, type=0):
     if len(start_idxes) == 0 or len(end_idxes) == 0:
         return np.empty([0,3])
     return np.array([[times_window[s],times_window[e], type] for s,e in zip(start_idxes, end_idxes)])
+
+def rectangular_window_discrete(N):
+    return np.ones(N)
+
+def trinangular_window_discrete(N):
+    return np.array([1 - 2*np.abs(n - (N-1)/2)/(N-1) for n in range(N)])
+
+def hanning_window_discrete(N):
+    return np.array([0.5 *(1-np.cos(2*np.pi*n/(N-1))) for n in range(N)])
+
+def hamming_window_discrete(N):
+    return np.array([0.54 - 0.46*np.cos(2*np.pi*n/(N-1)) for n in range(N)])
+
+def blackman_window_discrete(N):
+    return np.array([0.42 - 0.5*np.cos(2*np.pi*n/(N-1)) + 0.08*np.cos(4*np.pi*n/(N-1)) for n in range(N)])
+
+
+def get_window(window_type: str):
+    if window_type == 'rectangular':
+        return rectangular_window
+    elif window_type == 'triangular':
+        return trinangular_window
+    elif window_type == 'hanning':
+        return hanning_window
+    elif window_type == 'hamming':
+        return hamming_window
+    elif window_type == 'blackman':
+        return blackman_window
+    else:
+        raise ValueError('Unknown window type')
+
+
+def rectangular_window(t: np.array, T: float):
+    return np.abs(t) < T/2
+
+def trinangular_window(t: np.array, T: float):
+    return np.maximum(0, 1 - np.abs(t) / T)
+
+def hanning_window(t: np.array, T: float):
+    return (0.5 + 0.5*np.cos(np.pi*t/T))*rectangular_window(t, T)
+
+def hamming_window(t: np.array, T: float):
+    return 0.54 + 0.46 * np.cos(np.pi*t/T)*rectangular_window(t, T)
+
+def blackman_window(t: np.array, T: float):
+    return 0.42 + 0.5 * np.cos(2*np.pi*t/T) + 0.08 * np.cos(2*np.pi*t/T)*rectangular_window(t, T)
+
+def rectangular_window_frequency_domain(f: np.array, T: float):
+    return 2*np.sin(f*T)/f
+
+
+def trinangular_window_frequency_domain(f: np.array, T: float):
+    return T*(np.sin(f*T/2)/(f*T/2))**2
+
+
+def hanning_window_frequency_domain(f: np.array, T: float):
+    return (np.pi**2*np.sin(f*T))/(f*(np.pi**2 - T**2*f**2))
+
+
+def hamming_window_frequency_domain(f: np.array, T: float):
+    return (1.08*np.pi**2-0.16*T**2*f**2)/(f*(np.pi**2 - T**2*f**2))*np.sin(f*T)
+
+
+def parzen_window_frequency_domain(f: np.array, T: float):
+    return 3*T/4*(np.sin(f*T/4)/(f*T/4))**4
+
+
+def fft(signal, window_size=2048, hop_size=512):
+    Y = librosa.stft(signal, n_fft=window_size, hop_length=hop_size)#complex with magnitude and phase
+    return Y, np.abs(Y)**2
+
+
+def our_windowed_fft(singal:np.array, window_type:str, window_size=2048, hop_size=512):
+    window = get_window(window_type)(window_size)
+    for end in range(window_size-1, len(singal), hop_size):
+        start = end - window_size
+        yield np.fft.fft(singal[start:end]*window)
+
+
+def volume_freq(f):
+    return 1/f.shape[0]*np.power(f,2).sum()
+def volume_freq_all_windows(f_windows):
+    result = []
+    for f in f_windows:
+        result.append(1/f.shape[0]*np.power(f,2).sum())
+    return np.array(result)
+
+BANDS = np.array([
+    [0,630],
+    [630, 1720],
+    [1720, 4400],
+    [4400, 11025]
+])
+
+def spectral_flatness_measure(b:int, f_):
+    pass
